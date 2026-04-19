@@ -1,0 +1,72 @@
+pipeline {
+    agent any
+
+    environment {
+        // Define directory where terraform config lives
+        TF_DIR = 'terraform'
+        // Define AWS Credentials required by Terraform
+        // (Make sure to configure these in Jenkins Credentials Manager)
+        AWS_ACCESS_KEY_ID = credentials('aws-access-key')
+        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')
+    }
+
+    tools {
+        // Ensure Terraform is installed in Jenkins via global configuration
+        // Go to Manage Jenkins > Global Tool Configuration > Add Terraform (name it "terraform")
+        terraform 'terraform'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                // Checkout code from version control
+                checkout scm
+            }
+        }
+
+        stage('Terraform Init') {
+            steps {
+                dir("${env.TF_DIR}") {
+                    sh 'terraform init'
+                }
+            }
+        }
+
+        stage('Terraform Validate') {
+            steps {
+                dir("${env.TF_DIR}") {
+                    sh 'terraform validate'
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                dir("${env.TF_DIR}") {
+                    // Generates an execution plan
+                    sh 'terraform plan -out=tfplan'
+                }
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                // To safely prevent unintended production deployments, require input
+                // input message: 'Approve Terraform Apply?', ok: 'Deploy'
+                dir("${env.TF_DIR}") {
+                    // Applying the execution plan automatically (-)
+                    sh 'terraform apply -auto-approve tfplan'
+                }
+            }
+        }
+    }
+    
+    post {
+        success {
+            echo "Infrastructure successfully deployed!"
+        }
+        failure {
+            echo "Pipeline failed. Check the logs."
+        }
+    }
+}
