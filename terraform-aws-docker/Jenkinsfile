@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         // Define directory where terraform config lives
-        TF_DIR = 'terraform'
+        TF_DIR = 'terraform-aws-docker/terraform'
         // Define AWS Credentials required by Terraform
         // (Make sure to configure these in Jenkins Credentials Manager)
         AWS_ACCESS_KEY_ID = credentials('aws-access-key')
